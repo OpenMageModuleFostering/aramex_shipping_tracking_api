@@ -117,7 +117,7 @@ $payment			= $_order->getPayment();
 				</div>
 				<div class="text_short">
 					
-					<?php $company_name = ($billing) ? $billing->getData('company') : '';?>
+					<?php $company_name = isset($billing) ? $billing->getData('company') : '';?>
 					<?php $_company=($session)?$formData['aramex_shipment_shipper_company']:Mage::getStoreConfig('aramexsettings/shipperdetail/company');?>
 					<label>Company</label><input type="text" id="aramex_shipment_shipper_company" name="aramex_shipment_shipper_company" value="<?php echo $_company; ?>"/>
 				</div>

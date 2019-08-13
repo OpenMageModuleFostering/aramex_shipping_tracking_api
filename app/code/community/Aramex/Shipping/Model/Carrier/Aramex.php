@@ -33,7 +33,7 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
 	
 	function __construct()
 	{
-		$this->_defaultGatewayUrl = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'aramex/Tracking.wsdl';
+		$this->_defaultGatewayUrl = Mage::helper('aramexshipment')->getWsdlPath().'Tracking.wsdl';
 	}
 	
 	protected function _doShipmentRequest(Varien_Object $request)
@@ -234,6 +234,7 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
         //$url = 'http://localhost:8080/soap_test/wsdl/Tracking.wsdl';
         //if (!$url) {
         $url = $this->_defaultGatewayUrl;
+		
         //}
 		
         $clientAramex = new SoapClient($url);

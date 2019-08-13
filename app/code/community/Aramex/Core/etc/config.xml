@@ -11,6 +11,15 @@
                 <class>Aramex_Core_Helper</class>
             </aramex_core>
         </helpers>
+		<template>
+            <email>
+				<aramexsettings_template_shipment_template translate="label" module="sales">
+                    <label>Aramex Shipment</label>
+                    <file>aramex/shipment_email.html</file>
+                    <type>html</type>
+                </aramexsettings_template_shipment_template>
+			</email>
+		</template>
      </global>
 	<adminhtml>
 		<acl>
@@ -33,4 +42,12 @@
 			</resources>
 		</acl>
 	</adminhtml>
+	<default>
+		<aramexsettings>
+				<template>					
+					<shipment_template>aramexsettings_template_shipment_template</shipment_template>	
+					<copy_method>bcc</copy_method>
+				</template>
+		</aramexsettings>
+	</default>
 </config>

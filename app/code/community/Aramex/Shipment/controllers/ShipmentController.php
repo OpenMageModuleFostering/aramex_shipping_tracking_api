@@ -1,6 +1,13 @@
 <?php
 	class Aramex_Shipment_ShipmentController extends Mage_Adminhtml_Controller_Action
 	{
+	
+	const XML_PATH_TRANS_IDENTITY_EMAIL  = 'trans_email/ident_general/email';
+	const XML_PATH_TRANS_IDENTITY_NAME   = 'trans_email/ident_general/name';
+	const XML_PATH_SHIPMENT_EMAIL_TEMPLATE = 'aramexsettings/template/shipment_template';
+	const XML_PATH_SHIPMENT_EMAIL_COPY_TO     = 'aramexsettings/template/copy_to';
+	const XML_PATH_SHIPMENT_EMAIL_COPY_METHOD = 'aramexsettings/template/copy_method';
+	
 
 		public function postAction()
 		{
@@ -9,6 +16,7 @@
 			$soapClient = new SoapClient($baseUrl . 'shipping.wsdl');
 			$aramex_errors = false;
 			$post = $this->getRequest()->getPost();
+			
 
 			$flag = true;
 			$error = "";
@@ -62,10 +70,12 @@
 				//attachment
                 for($i=1;$i<=3;$i++){
   				    $fileName = $_FILES['file'.$i]['name'];
-    				if(isset($fileName)){
+    				if(isset($fileName)!=''){
     					$fileName = explode('.', $fileName);
     					$fileName = $fileName[0]; //filename without extension
-    					$fileData = file_get_contents($_FILES['file'.$i]['tmp_name']);
+						$fileData ='';
+						if($_FILES['file'.$i]['tmp_name']!='')
+							$fileData = file_get_contents($_FILES['file'.$i]['tmp_name']);
     					//$fileData = base64_encode($fileData); //base64binary encode
     					$ext = pathinfo($_FILES['file'.$i]['name'], PATHINFO_EXTENSION); //file extension
                         if($fileName&&$ext&&$fileData)
@@ -87,7 +97,7 @@
 
 					//Party Address
 					'PartyAddress'		=> array(
-								'Line1'					=> mysql_escape_string($post['aramex_shipment_shipper_street']), //'13 Mecca St',
+								'Line1'					=> addslashes($post['aramex_shipment_shipper_street']), //'13 Mecca St',
 								'Line2'					=> '',
 								'Line3'					=> '',
 								'City'					=> $post['aramex_shipment_shipper_city'], //'Dubai',
@@ -157,7 +167,7 @@
 
 						//Party Address
 						'PartyAddress'		=> array(
-									'Line1'					=> mysql_escape_string(Mage::getStoreConfig('aramexsettings/shipperdetail/address')), //'13 Mecca St',
+									'Line1'					=> addslashes(Mage::getStoreConfig('aramexsettings/shipperdetail/address')), //'13 Mecca St',
 									'Line2'					=> '',
 									'Line3'					=> '',
 									'City'					=> Mage::getStoreConfig('aramexsettings/shipperdetail/city'), //'Dubai',
@@ -288,38 +298,67 @@
 							//sending mail
 							if($ship){
 //								if($post['aramex_email_customer'] == 'yes'){
-
-
-									$fromEmail = $post['aramex_shipment_shipper_email']; // sender email address
-									$fromName = $post['aramex_shipment_shipper_name']; // sender name
-
-									$toEmail = $post['aramex_shipment_receiver_email']; // recipient email address
-									$toName = $post['aramex_shipment_receiver_name']; // recipient name
-
-									$body = "Your shipment has been created for order id : ".$post['aramex_shipment_info_reference']."<br />Shipment No : ".$auth_call->Shipments->ProcessedShipment->ID."<br />"; // body text
-									$subject = "Aramex Shipment";		
-                                    $body = 'Airway bill number: '.$auth_call->Shipments->ProcessedShipment->ID.'<br />Order number: '.$order->getIncrementId().'<br />You can track shipment on <a href="http://www.aramex.com/express/track.aspx">http://www.aramex.com/express/track.aspx</a><br />';
-									$mail = new Zend_Mail();
-									$mail->setBodyText($body);
-                                    $fromEmail=Mage::getStoreConfig('trans_email/ident_general/email');
-                                    $fromName=Mage::getStoreConfig('trans_email/ident_general/name');
-									$mail->setFrom($fromEmail, $fromName);
-                                    $toEmail=$order->getCustomerEmail();
-                                    $toName=$order->getCustomerName();
-									$mail->addTo($toEmail, $toName);
-									$mail->setSubject($subject);
-
-									try {
-										$mail->send();
+                                  
+								  /* send shipment mail */
+								   $storeId = $order->getStore()->getId();
+								   $copyTo = Mage::helper('aramex_core')->getEmails(self::	XML_PATH_SHIPMENT_EMAIL_COPY_TO,$storeId);
+								  $copyMethod = Mage::getStoreConfig(self::XML_PATH_SHIPMENT_EMAIL_COPY_METHOD, $storeId);
+								  
+								  $templateId = Mage::getStoreConfig(self::XML_PATH_SHIPMENT_EMAIL_TEMPLATE, $storeId);
+								  
+								  if ($order->getCustomerIsGuest()) {					
+									$customerName = $order->getBillingAddress()->getName();
+								   } else {									
+									$customerName = $order->getCustomerName();
 									}
+									$shipments_id = $auth_call->Shipments->ProcessedShipment->ID;
+									
+									$mailer = Mage::getModel('core/email_template_mailer');
+									  
+									$emailInfo = Mage::getModel('core/email_info');
+									$emailInfo->addTo($order->getCustomerEmail(), $customerName);
+									
+								
 
-									catch(Exception $ex) {
-										Mage::getSingleton('core/session')
+									
+									if ($copyTo && $copyMethod == 'bcc') {
+									// Add bcc to customer email
+										foreach ($copyTo as $email) {
+											$emailInfo->addBcc($email);
+										}
+									}
+									$mailer->addEmailInfo($emailInfo);
+									 // Email copies are sent as separated emails if their copy method is 'copy'
+									if ($copyTo && $copyMethod == 'copy') {
+										foreach ($copyTo as $email) {
+											$emailInfo = Mage::getModel('core/email_info');
+											$emailInfo->addTo($email);
+											$mailer->addEmailInfo($emailInfo);
+										}
+									}
+									
+								 
+								$senderName=Mage::getStoreConfig(self::XML_PATH_TRANS_IDENTITY_NAME,$storeId);
+                                $senderEmail=Mage::getStoreConfig(self::XML_PATH_TRANS_IDENTITY_EMAIL,$storeId); 
+								 
+								// Set all required params and send emails
+								$mailer->setSender(array('name' => $senderName, 'email' =>$senderEmail));
+								$mailer->setStoreId($storeId);
+								$mailer->setTemplateId($templateId);
+								$mailer->setTemplateParams(array(
+										'order'        => $order,						
+										'shipments_id' => $shipments_id					
+									)
+								);
+								try {
+									$mailer->send();
+								}
+								catch(Exception $ex) {
+								    Mage::getSingleton('core/session')
 											->addError('Unable to send email.');
-									}
-
+								}	
 //								}
-							}
+							}							
 
 							Mage::getSingleton('core/session')->addSuccess('Aramex Shipment Number: '.$auth_call->Shipments->ProcessedShipment->ID.' has been created.');
 							//$order->setState('warehouse_pickup_shipped', true);
@@ -350,17 +389,24 @@
 			$previuosUrl=Mage::getSingleton('core/session')->getPreviousUrl();
 			
 			if($_order->getId()){
-				$baseUrl = Mage::helper('aramexshipment')->getWsdlPath();
+				$baseUrl = Mage::helper('aramexshipment')->getWsdlPath();				
 				$soapClient = new SoapClient($baseUrl . 'shipping.wsdl');
 				$clientInfo = Mage::helper('aramexshipment')->getClientInfo();							
 				$commentTable= Mage::getSingleton('core/resource')->getTableName('sales/shipment_comment');
 				$shipments = Mage::getResourceModel('sales/order_shipment_collection')
 				->addAttributeToSelect('*')	
 				->addFieldToFilter("order_id",$_order->getId())->join("sales/shipment_comment",'main_table.entity_id=parent_id','comment')->addFieldToFilter('comment', array('like'=>"%{$_order->getIncrementId()}%"))->load();
+				
+								
 				if($shipments->count()){
 				foreach($shipments as $key=>$comment){
-					$awbno=strstr($comment->getComment(),"- Order No",true);					
-					$awbno=trim($awbno,"AWB No.");
+                    if (version_compare(PHP_VERSION, '5.3.0') <= 0) {
+						$awbno=substr($comment->getComment(),0, strpos($comment->getComment(),"- Order No")); 
+					}
+					else{				
+						$awbno=strstr($comment->getComment(),"- Order No",true);
+					}
+                    $awbno=trim($awbno,"AWB No.");					
 					break;
 				}
 				$params = array(		
@@ -380,10 +426,22 @@
 				),
 				);
 				$params['ShipmentNumber']=$awbno;
-				//print_r($params);	
+			/*	print_r($params);
+                exit;	*/			
 				try {
 					$auth_call = $soapClient->PrintLabel($params);
-					$filepath=$auth_call->ShipmentLabel->LabelURL;
+					/* bof  PDF demaged Fixes debug */				
+                    if($auth_call->HasErrors){
+					  if(count($auth_call->Notifications->Notification) > 1){
+								foreach($auth_call->Notifications->Notification as $notify_error){
+									Mage::throwException($this->__('Aramex: ' . $notify_error->Code .' - '. $notify_error->Message));
+								}
+							} else {
+								Mage::throwException($this->__('Aramex: ' . $auth_call->Notifications->Notification->Code . ' - '. $auth_call->Notifications->Notification->Message));
+							}					
+                    }
+                    /* eof  PDF demaged Fixes */					
+					$filepath=$auth_call->ShipmentLabel->LabelURL;					
 					$name="{$_order->getIncrementId()}-shipment-label.pdf";
 					header('Content-type: application/pdf');
 					header('Content-Disposition: attachment; filename="'.$name.'"');
@@ -402,5 +460,6 @@
 				$this->_redirectUrl($previuosUrl);
 			}
 		}
+		
 	}
 ?>
