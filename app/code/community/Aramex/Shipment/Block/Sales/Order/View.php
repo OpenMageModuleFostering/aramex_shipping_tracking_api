@@ -8,6 +8,15 @@
 						'onclick'   => 'aramexpop('.$itemscount.')',
 						'class'     => 'go'
 					), 0, 100, 'header', 'header');
+			//barry code
+			if($itemscount==0){				
+				$this->_addButton('print_aramex_label', array(
+						'label'     => Mage::helper('Sales')->__('Aramex Print Label'),
+						'onclick'   => "myObj.printLabel()",
+						'class'     => 'go'
+					), 0, 200, 'header', 'header');
+			}
+			//barry code end here
 			
 			parent::__construct();
 		}

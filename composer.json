@@ -1,13 +1,13 @@
 {
     "name": "OpenMageModuleFostering/Aramex_Shipping_Tracking_API",
     "type": "magento-module",
-    "license": "OSL-v3.0",
+    "license": "OSL-3.0",
     "homepage": "",
-    "description": " This extension allows you to prepare shipments and track their status through the admin portal of Magento. ",
+    "description": "Aramex Shipping Extension for magento",
     "authors": [
     {
         "name": "Aramex",
-        "email": "Amol.Tated@aramex.com"
+        "email": "portalsthirdparty@aramex.com"
     }
 ],
     "suggest": {

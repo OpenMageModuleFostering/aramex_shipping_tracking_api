@@ -1,0 +1,207 @@
+<?php //barry code;?>
+<?php 
+$_order = Mage::getModel('sales/order')->load($this->getRequest()->getParam('order_id'));
+?>
+<?php $shipping 	= $_order->getShippingAddress(); ?>
+
+<?php
+	//calculating total weight of current order
+	$state = "";
+	if(($shipping->getData('region_id')) && ($shipping->getCountry() == 'US')){
+		$region = Mage::getModel('directory/region')->load($shipping->getData('region_id'));
+		$state = $region->getName();
+	}
+	else{
+		$state = $shipping->getData('region');
+	}
+
+	$billing_state = "";
+	if($shipping->getData('region_id')){
+		$region = Mage::getModel('directory/region')->load($shipping->getData('region_id'));
+		$billing_state = $region->getName();
+	}
+	else{
+		$billing_state = $shipping->getData('region');
+	}
+	$totalWeight 	= 0;
+	$itemscount 	= 0;
+	$itemsv = $_order->getAllVisibleItems();
+	foreach($itemsv as $itemvv){
+		if($itemvv->getQtyOrdered() > $itemvv->getQtyShipped()){
+			$itemscount += $itemvv->getQtyOrdered() - $itemvv->getQtyShipped();
+		}else if($itemvv->getQtyOrdered() == $itemvv->getQtyShipped()){
+			$itemscount += $itemvv->getQtyShipped();
+		}
+		if($itemvv->getWeight() != 0){
+			$weight =  $itemvv->getWeight()*$itemvv->getQtyOrdered();
+		} else {
+			$weight =  0.5*$itemvv->getQtyOrdered();
+		}
+		$totalWeight 	+= $weight;
+	}
+?>			
+			<div class="back-over"></div>
+			<div class="cal-rate-part">
+				
+				<div class="cal-form">
+				<form method="post" action="<?php echo Mage::helper("adminhtml")->getUrl('aramexshipment/rate/post'); ?>" id="calc-rate-form">
+					
+						<FIELDSET>
+						<legend style="font-weight:bold; padding:0 5px;">Calculate Rates</legend>
+						<div class="fields mar-10">
+						<h3>Shipment Origin</h3>
+						<div class="clearfix mar-10">
+						<div class="field fl width-270">
+							<label><span>*</span>Country</label>
+							<?php  $_countries = Mage::getResourceModel('directory/country_collection')->loadByStore()->toOptionArray(); ?>
+								<select name="origin_country" id="origin_country">
+								<?php if(count($_countries)>0):?>
+									<?php foreach($_countries as $_country): ?>
+										<option value="<?php echo $_country['value'] ?>" <?php if(Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo (Mage::getStoreConfig('aramexsettings/shipperdetail/country') == $_country['value']) ? 'selected="selected"' : ''; }?>>
+											<?php echo $_country['label'] ?>
+										</option>
+									<?php endforeach; ?>
+								<?php endif;?>
+							</select>
+						</div>
+						<div class="field fl">
+							<label>City</label>
+							<input type="text" name="origin_city" id="origin_city" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/city'); ?>" />
+						</div>
+						</div>
+						<div class="clearfix mar-10">
+						<div class="field fl width-270">
+							<label>Zip code</label>
+							<input type="text" name="origin_zipcode" id="origin_zipcode" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/postalcode'); ?>" />
+						</div>
+						<div class="field fl">
+							<label>State / Province</label>
+							<input type="text" name="origin_state" id="origin_state" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/state'); ?>"/>
+						</div>
+						</div>
+						</div>
+						<div class="fields mar-10">
+						<h3>Shipment Destination</h3>
+						<div class="clearfix mar-10">
+							<div class="field fl width-270">
+								<label><span>*</span>Country</label>							
+									<select name="destination_country" id="destination_country" >
+									<?php if(count($_countries)>0):?>
+										<?php foreach($_countries as $_country): ?>
+											<option value="<?php echo $_country['value'] ?>"  <?php if($shipping){ echo ($shipping->getCountry() == $_country['value']) ? 'selected="selected"' : ''; }?>>
+												<?php echo $_country['label'] ?>
+											</option>
+										<?php endforeach; ?>
+									<?php endif;?>
+								</select>
+							</div>
+							<div class="field fl">
+								<label>City</label>
+								<input type="text" name="destination_city" id="destination_city" value="<?php echo ($shipping) ? $shipping->getData('city') : ''; ?>" />
+							</div>
+						</div>
+						<div class="clearfix mar-10">
+							<div class="field fl width-270">
+								<label>Zip code</label>
+								<input type="text" name="destination_zipcode" id="destination_zipcode" value="<?php echo ($shipping) ? $shipping->getData('postcode') : ''; ?>" />
+							</div>
+							<div class="field fl">
+								<label>State / Province</label>
+								<input type="text" name="destination_state" id="destination_state" value="<?php echo ($shipping) ? $state : ''; ?>" />
+							</div>						
+						</div>						
+						</div>
+						<div class="fields mar-10">
+						
+						<div class="clearfix mar-10">
+							<div class="field fl width-270">
+								<label><span>*</span>Payment Type</label>							
+								<select name="payment_type">
+									<option value="P">Prepaid</option>
+									<option value="C">Collect</option>
+								</select>
+							</div>
+							<div class="field fl">
+								<label><span>*</span>Product Type</label>							
+									<select name="product_group" id="calc-product-group">
+									<option <?php if($shipping) {echo ($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="DOM">Domestic</option>
+						<option <?php if($shipping) {echo ($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="EXP">International Express</option>							
+									</select>
+							</div>
+						</div>
+						<div class="clearfix mar-10">
+							<div class="field fl width-270">							
+							<label><span>*</span>Service Type</label>							
+								<select name="service_type" class="fl" id="service_type">
+								<option <?php if($shipping) {echo ($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="ONP" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Parcel</option>
+							<option value="OND" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Document</option>
+							<option value="CDA" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Cash on Delivery</option>
+							<option <?php if($shipping) {echo ($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="PDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Document Express</option>
+							<option value="PPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Parcel Express</option>
+							<option value="PLX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Letter Express</option>
+							<option value="DDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Deferred Document Express</option>
+							<option value="DPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Deferred Parcel Express</option>
+							<option value="GDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Document Express</option>
+							<option value="GPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Parcel Express</option>							
+							</select>
+							</div>
+							<div class="field fl">
+								<label><span>*</span>Weight</label>
+								<div>
+									<input type="text" name="text_weight" class="fl mar-right-10 width-60" value="<?php echo number_format($totalWeight, 2); ?>" />
+									<select name="weight_unit" class="fl width-60">
+									<option value="KG">KG</option>
+									<option value="LB">LB</option>								
+									</select>
+								</div>
+							</div>
+						</div>
+						<div class="clearfix mar-10">
+							<div class="field fl width-270">
+								<label style="width:270px;"><span>*</span>Number of Pieces:</label>							
+								<input type="text" value="<?php echo $itemscount;?>" name="total_count" class="fl" />
+							</div>
+							
+						</div>
+						<div class="cal-button-part">
+							<button name="aramex_calc_rate_submit" type="button" id="aramex_calc_rate_submit" onclick="calcRateForm.submit();">Caclculate</button>
+							<button type="button" onclick="myObj.close()">Close</button>
+							<span class="mar-lf-10 red">* are required fields</span>
+							
+							<input type="hidden" value="<?php echo $_order->getIncrementId();?>" name="reference" />
+							
+						</div>
+						<div class="rate-result mar-10">
+							<h3>Result</h3>
+							<div class="result mar-10"></div>	
+						</div>
+						</div>
+						</FIELDSET>
+					
+					<script type="text/javascript">
+//<![CDATA[
+					var calcRateForm = new Validation('calc-rate-form');  
+			calcRateForm.submit=function(){
+				if (this.validate()) {
+						myObj.calcRate();
+				}
+			} 
+			Event.observe('calc-product-group', 'change', function(){
+				var e=document.getElementById('service_type');
+				if(this.value=='EXP'){ 
+				e.options[3].selected=true;
+				jQuery('.non-local').show();jQuery('.local').hide(); }
+				else{  
+				e.options[0].selected=true;
+				jQuery('.non-local').hide();jQuery('.local').show(); }
+			});
+			<?php $_url=Mage::helper("adminhtml")->getUrl('aramexshipment/shipment/printLabel/order_id/'.$this->getRequest()->getParam('order_id'));?>
+			myObj.printLabelUrl='<?php echo $_url;?>';
+				
+			  //]]>
+			</script>
+				</form>
+				
+				</div>
+			</div>
+			<?php //barry code end;?>

@@ -5,12 +5,7 @@
             <version>0.6.0</version>
         </Aramex_Core>
     </modules>
-    <global>
-        <models>
-            <aramex_core>
-                <class>Aramex_Core_Model</class>
-            </aramex_core>
-        </models>
+    <global>        
         <helpers>
             <aramex_core>
                 <class>Aramex_Core_Helper</class>

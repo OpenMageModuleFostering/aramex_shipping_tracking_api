@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Aramex_Adminhtml>
+            <version>0.1.0</version>
+        </Aramex_Adminhtml>
+    </modules>
+    <admin>
+        <routers>
+            <adminhtml>
+                <args>
+                    <modules>
+                        <Aramex_Adminhtml before="Mage_Adminhtml">Aramex_Adminhtml</Aramex_Adminhtml>
+                    </modules>
+                </args>
+            </adminhtml>
+        </routers>
+    </admin>
+</config>

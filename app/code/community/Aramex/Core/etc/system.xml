@@ -42,8 +42,7 @@
 						</account_entity>
 						<account_number>
 							<label>Account Number</label>
-							<frontend_type>text</frontend_type>
-							<validate>validate-number</validate>
+							<frontend_type>text</frontend_type>							
 							<sort_order>1</sort_order>
 							<show_in_default>1</show_in_default>
 							<show_in_website>1</show_in_website>
@@ -51,8 +50,7 @@
 						</account_number>
 						<account_pin>
 							<label>Account Pin</label>
-							<frontend_type>text</frontend_type>
-							<validate>validate-number</validate>
+							<frontend_type>text</frontend_type>							
 							<sort_order>1</sort_order>
 							<show_in_default>1</show_in_default>
 							<show_in_website>1</show_in_website>

@@ -4,30 +4,18 @@
 
 		public function postAction()
 		{
-
-			//removing index.php from base url to include wsdl file
-			$baseUrl = str_replace("index.php/", "", Mage::getUrl());
-
+			$baseUrl = Mage::helper('aramexshipment')->getWsdlPath();
 			//SOAP object
-			$soapClient = new SoapClient($baseUrl . 'aramex/shipping.wsdl');
-
-
+			$soapClient = new SoapClient($baseUrl . 'shipping.wsdl');
 			$aramex_errors = false;
 			$post = $this->getRequest()->getPost();
 
 			$flag = true;
 			$error = "";
-
-
-
 			try {
 				if (empty($post)) {
 					Mage::throwException($this->__('Invalid form data.'));
 				}
-
-
-
-
 				/* here's your form processing */
 				$order = Mage::getModel('sales/order')->loadByIncrementId($post['aramex_shipment_original_reference']);
 				$payment = $order->getPayment();
@@ -88,21 +76,14 @@
     					);
     				}
                 }
-
-
-
-
-
 				$totalWeight = $post['order_weight'];
-				//$totalItems 	+= $post[$item->getId()];
-
 				$params = array();
 
 				//shipper parameters
 				$params['Shipper'] = array(
 					'Reference1' 		=> $post['aramex_shipment_shipper_reference'], //'ref11111',
 					'Reference2' 		=> '',
-					'AccountNumber' 	=> ($post['aramex_shipment_info_billing_account'] == 1) ? $post['aramex_shipment_shipper_account'] : '', //'43871',
+					'AccountNumber' 	=> ($post['aramex_shipment_info_billing_account'] == 1) ? $post['aramex_shipment_shipper_account'] : $post['aramex_shipment_shipper_account'], //'43871',
 
 					//Party Address
 					'PartyAddress'		=> array(
@@ -203,11 +184,7 @@
 					);
 
 				}
-
-
-
 				// Other Main Shipment Parameters
-
 				$params['Reference1'] 				= $post['aramex_shipment_info_reference']; //'Shpt0001';
 				$params['Reference2'] 				= '';
 				$params['Reference3'] 				= '';
@@ -217,29 +194,10 @@
 				$params['ShippingDateTime'] 		= time(); //date('m/d/Y g:i:sA');
 				$params['DueDate'] 					= time() + (7 * 24 * 60 * 60); //date('m/d/Y g:i:sA');
 				$params['PickupLocation'] 			= 'Reception';
-				$params['PickupGUID'] 				= '';
-				/*if($post['aramex_shipment_shipper_country'] == $post['aramex_shipment_receiver_country']){
-					$cod_currency_value = $post['aramex_shipment_info_cod_value'];
-					$cod_currency 		= $order->getData('base_currency_code');
-				} else {
-
-					//TODO (dynamic base currency)
-
-					$cod_currency_value = round(Mage::helper('directory')->currencyConvert($post['aramex_shipment_info_cod_value'], 'INR', 'USD'), 2);
-					$cod_currency 		= 'USD';
-				}
-
-				if($payment->getData('method') == 'ig_cashondelivery'){
-					$payment_comment = 'Please collect COD amount '.$cod_currency_value.' '.$cod_currency;
-				} else {
-					$payment_comment = 'Paid online by credit card';
-				}
-				*/
+				$params['PickupGUID'] 				= '';				
 				$params['Comments'] 				= $post['aramex_shipment_info_comment'];
 				$params['AccountingInstrcutions'] 	= '';
 				$params['OperationsInstructions'] 	= '';
-
-
 				$params['Details'] = array(
 								'Dimensions'			=> array(
 									'Length'	=> '0',
@@ -250,7 +208,7 @@
 
 								'ActualWeight'			=> array(
 									'Value'		=> $totalWeight,
-									'Unit'		=> 'Kg'
+									'Unit'		=> $post['weight_unit']
 								),
 
 								'ProductGroup'			=> $post['aramex_shipment_info_product_group'], //'EXP',
@@ -272,79 +230,32 @@
 				);
                 if(count($aramex_atachments)){
                   $params['Attachments'] = $aramex_atachments;
-                }
-                //print_r($params);exit;
-				//if($payment->getData('method') == 'ig_cashondelivery'){
-				if($post['aramex_shipment_info_product_type'] == 'CDA'){
-					/*if($post['aramex_shipment_shipper_country'] == $post['aramex_shipment_receiver_country']){
-						$params['Details']['CashOnDeliveryAmount'] = array(
-								'Value' 		=> $post['aramex_shipment_info_cod_amount'], //$payment->getData('amount_authorized'),
-								'CurrencyCode' 	=> $order->getData('base_currency_code')
-						);
-					} else {
-						$aramex_amount = round(Mage::helper('directory')->currencyConvert($post['aramex_shipment_info_cod_amount'], $order->getData('base_currency_code'), 'USD'), 2);
-						if($aramex_amount > 500){
-							Mage::getSingleton('adminhtml/session')->addError('Aramex: shipment COD amount is over 500$');
-						} else {
-							$params['Details']['CashOnDeliveryAmount'] = array(
-								'Value' 		=> round(Mage::helper('directory')->currencyConvert($post['aramex_shipment_info_cod_amount'], $order->getData('base_currency_code'), 'USD'), 2),
-								'CurrencyCode' 	=> 'USD'
-							);
-						}
-					}
-
-
-					$params['Details']['CashOnDeliveryAmount'] = array(
-							'Value' 		=> $post['aramex_shipment_info_cod_amount'], //$payment->getData('amount_authorized'),
-							'CurrencyCode' 	=>  $post['aramex_shipment_currency_code']
-					);
-					*/
-
-				}
+                } 
 
 				$params['Details']['CashOnDeliveryAmount'] = array(
-						'Value' 		=> $post['aramex_shipment_info_cod_amount'], //$payment->getData('amount_authorized'),
+						'Value' 		=> $post['aramex_shipment_info_cod_amount'], 
 						'CurrencyCode' 	=>  $post['aramex_shipment_currency_code']
 				);
 
 				$params['Details']['CustomsValueAmount'] = array(
-						'Value' 		=> $post['aramex_shipment_info_custom_amount'], //$payment->getData('amount_authorized'),
+						'Value' 		=> $post['aramex_shipment_info_custom_amount'], 
 						'CurrencyCode' 	=>  $post['aramex_shipment_currency_code']
 				);
 
 				$major_par['Shipments'][] 	= $params;
-
-				$major_par['ClientInfo'] 	= array(
-							'AccountCountryCode'	=> Mage::getStoreConfig('aramexsettings/settings/account_country_code',Mage::app()->getStore()),
-							'AccountEntity'		 	=>  Mage::getStoreConfig('aramexsettings/settings/account_entity',Mage::app()->getStore()),
-							'AccountNumber'		 	=>  Mage::getStoreConfig('aramexsettings/settings/account_number',Mage::app()->getStore()),
-							'AccountPin'		 	=>  Mage::getStoreConfig('aramexsettings/settings/account_pin',Mage::app()->getStore()),
-							'UserName'			 	=>  Mage::getStoreConfig('aramexsettings/settings/user_name',Mage::app()->getStore()),
-							'Password'			 	=>  Mage::getStoreConfig('aramexsettings/settings/password',Mage::app()->getStore()),
-							'Version'			 	=> '1.0'
-				);
+				$clientInfo = Mage::helper('aramexshipment')->getClientInfo();	
+				$major_par['ClientInfo'] 	=$clientInfo;
 
 				$major_par['LabelInfo'] = array(
 					'ReportID'		=> 9729, //'9201',
 					'ReportType'		=> 'URL'
 				);
 
-                 //print_r($major_par);exit;
-
-                //print_r($major_par);exit;
-
-				$_SESSION['form_data'] = $_POST;
-
-				//print_r($params['Attachment']);die;
-
-
-
+				$formSession=Mage::getSingleton('adminhtml/session');
+				$formSession->setData("form_data",$post);
 				try {
 					//create shipment call
-					$auth_call = $soapClient->CreateShipments($major_par);
-
-
-
+					$auth_call = $soapClient->CreateShipments($major_par);					
 					if($auth_call->HasErrors){
 						if(empty($auth_call->Shipments)){
 							if(count($auth_call->Notifications->Notification) > 1){
@@ -366,18 +277,14 @@
 							}
 						}
 					} else {
-						if($order->canShip()) {
+						if($order->canShip()) {	   
+							
+							$shipmentid = Mage::getModel('sales/order_shipment_api')->create($order->getIncrementId(), $post['aramex_items'], "AWB No. ".$auth_call->Shipments->ProcessedShipment->ID." - Order No. ".$auth_call->Shipments->ProcessedShipment->Reference1." - <a href='javascript:void(0);' onclick='myObj.printLabel();'>Print Label</a>");
+							
+							$ship 		= true;						
 
-							//Create shipment in magento
-							$shipmentid = Mage::getModel('sales/order_shipment_api')->create($order->getIncrementId(), $post['aramex_items'], "AWB No. ".$auth_call->Shipments->ProcessedShipment->ID." - Order No. ".$auth_call->Shipments->ProcessedShipment->Reference1." - " .$auth_call->Shipments->ProcessedShipment->ShipmentLabel->LabelURL);
-
-
-
-							//Add tracking information
-							$ship 		= true;
-
-							//$ship 		= Mage::getModel('sales/order_shipment_api')->addTrack($shipmentid, 'aramex', 'Aramex', $auth_call->Shipments->ProcessedShipment->ID);
-
+							$ship 		= Mage::getModel('sales/order_shipment_api')->addTrack($shipmentid, 'aramex', 'Aramex', $auth_call->Shipments->ProcessedShipment->ID);
+							
 							//sending mail
 							if($ship){
 //								if($post['aramex_email_customer'] == 'yes'){
@@ -390,25 +297,7 @@
 									$toName = $post['aramex_shipment_receiver_name']; // recipient name
 
 									$body = "Your shipment has been created for order id : ".$post['aramex_shipment_info_reference']."<br />Shipment No : ".$auth_call->Shipments->ProcessedShipment->ID."<br />"; // body text
-									$subject = "Aramex Shipment"; // subject text
-
-//									$mail = new Zend_Mail();
-//
-//									$mail->setBodyText($body);
-//
-//									$mail->setFrom($fromEmail, $fromName);
-//
-//									$mail->addTo($toEmail, $toName);
-//
-//									$mail->setSubject($subject);
-//
-//									try {
-//										$mail->send();
-//									}
-//									catch(Exception $ex) {
-//										Mage::getSingleton('core/session')
-//											->addError('Unable to send email.');
-//									}
+									$subject = "Aramex Shipment";		
                                     $body = 'Airway bill number: '.$auth_call->Shipments->ProcessedShipment->ID.'<br />Order number: '.$order->getIncrementId().'<br />You can track shipment on <a href="http://www.aramex.com/express/track.aspx">http://www.aramex.com/express/track.aspx</a><br />';
 									$mail = new Zend_Mail();
 									$mail->setBodyText($body);
@@ -442,13 +331,75 @@
 				}
 
 				if($aramex_errors){
-					$this->_redirectUrl($post['aramex_shipment_referer'] . 'aramexpopup/show');
+					$strip=strstr($post['aramex_shipment_referer'],"aramexpopup",true);
+					$url=$strip;
+					if(empty($strip)){
+						$url=$post['aramex_shipment_referer'];
+					}					
+					$this->_redirectUrl($url . 'aramexpopup/show');
 				} else {
 					$this->_redirectUrl($post['aramex_shipment_referer']);
 				}
 
 			} catch (Exception $e) {
 				Mage::getSingleton('adminhtml/session')->addError($e->getMessage());
+			}
+		}
+		public function printLabelAction(){
+			$_order = Mage::getModel('sales/order')->load($this->getRequest()->getParam('order_id'));
+			$previuosUrl=Mage::getSingleton('core/session')->getPreviousUrl();
+			
+			if($_order->getId()){
+				$baseUrl = Mage::helper('aramexshipment')->getWsdlPath();
+				$soapClient = new SoapClient($baseUrl . 'shipping.wsdl');
+				$clientInfo = Mage::helper('aramexshipment')->getClientInfo();							
+				$commentTable= Mage::getSingleton('core/resource')->getTableName('sales/shipment_comment');
+				$shipments = Mage::getResourceModel('sales/order_shipment_collection')
+				->addAttributeToSelect('*')	
+				->addFieldToFilter("order_id",$_order->getId())->join("sales/shipment_comment",'main_table.entity_id=parent_id','comment')->addFieldToFilter('comment', array('like'=>"%{$_order->getIncrementId()}%"))->load();
+				if($shipments->count()){
+				foreach($shipments as $key=>$comment){
+					$awbno=strstr($comment->getComment(),"- Order No",true);					
+					$awbno=trim($awbno,"AWB No.");
+					break;
+				}
+				$params = array(		
+			
+				'ClientInfo'  			=> $clientInfo,
+
+				'Transaction' 			=> array(
+											'Reference1'			=> $_order->getIncrementId(),
+											'Reference2'			=> '', 
+											'Reference3'			=> '', 
+											'Reference4'			=> '', 
+											'Reference5'			=> '',									
+										),
+				'LabelInfo'				=> array(
+											'ReportID' 				=> 9729,
+											'ReportType'			=> 'URL',
+				),
+				);
+				$params['ShipmentNumber']=$awbno;
+				//print_r($params);	
+				try {
+					$auth_call = $soapClient->PrintLabel($params);
+					$filepath=$auth_call->ShipmentLabel->LabelURL;
+					$name="{$_order->getIncrementId()}-shipment-label.pdf";
+					header('Content-type: application/pdf');
+					header('Content-Disposition: attachment; filename="'.$name.'"');
+					readfile($filepath);
+					exit();					
+				} catch (SoapFault $fault) {					
+					Mage::getSingleton('adminhtml/session')->addError('Error : ' . $fault->faultstring);
+					$this->_redirectUrl($previuosUrl);
+				}
+				}else{
+					Mage::getSingleton('adminhtml/session')->addError($this->__('Shipment is empty or not created yet.'));
+					$this->_redirectUrl($previuosUrl);
+				}
+			}else{
+				Mage::getSingleton('adminhtml/session')->addError($this->__('This order no longer exists.'));
+				$this->_redirectUrl($previuosUrl);
 			}
 		}
 	}

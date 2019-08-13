@@ -21,6 +21,7 @@
           <xsd:element type="xsd:string" name="AccountPin" nillable="true"/>
           <xsd:element type="xsd:string" name="AccountEntity" nillable="true"/>
           <xsd:element type="xsd:string" name="AccountCountryCode" nillable="true"/>
+          <xsd:element type="xsd:int" name="Source" nillable="true"/>
         </xsd:sequence>
       </xsd:complexType>
       <xsd:element type="tns:ClientInfo" name="ClientInfo" nillable="true"/>
@@ -55,9 +56,11 @@
           <xsd:element type="xsd:string" name="OperationsInstructions" nillable="true" minOccurs="0"/>
           <xsd:element type="xsd:string" name="AccountingInstrcutions" nillable="true" minOccurs="0"/>
           <xsd:element type="tns:ShipmentDetails" name="Details" nillable="true" minOccurs="0"/>
+          <xsd:element type="tns:ArrayOfAttachment" name="Attachments" nillable="true" minOccurs="0"/>
           <xsd:element type="xsd:string" name="ForeignHAWB" nillable="true" minOccurs="0"/>
           <xsd:element type="xsd:int" name="TransportType_x0020_" minOccurs="0"/>
           <xsd:element type="xsd:string" name="PickupGUID" nillable="true" minOccurs="0"/>
+          <xsd:element minOccurs="0" name="Number" nillable="true" type="xsd:string"/>
         </xsd:sequence>
       </xsd:complexType>
       <xsd:element type="tns:Shipment" name="Shipment" nillable="true"/>
@@ -123,7 +126,6 @@
         </xsd:sequence>
       </xsd:complexType>
       <xsd:element type="tns:ShipmentDetails" name="ShipmentDetails" nillable="true"/>
-      <xsd:element type="tns:ArrayOfAttachment" name="Attachments" nillable="true" minOccurs="0"/>
       <xsd:complexType name="Dimensions">
         <xsd:sequence>
           <xsd:element type="xsd:double" name="Length"/>
@@ -140,14 +142,6 @@
         </xsd:sequence>
       </xsd:complexType>
       <xsd:element type="tns:Weight" name="Weight" nillable="true"/>
-      <xsd:complexType name="Atachment">
-        <xsd:sequence>
-          <xsd:element type="xsd:string" name="FileName"/>
-          <xsd:element type="xsd:string" name="FileExtension"/>
-          <xsd:element type="xsd:base64Binary" name="FileContents"/>
-        </xsd:sequence>
-      </xsd:complexType>
-      <xsd:element type="tns:Atachment" name="Atachment" nillable="true"/>
       <xsd:complexType name="Money">
         <xsd:sequence>
           <xsd:element type="xsd:string" name="CurrencyCode" nillable="true"/>
@@ -179,9 +173,9 @@
       <xsd:element type="tns:ArrayOfAttachment" name="ArrayOfAttachment" nillable="true"/>
       <xsd:complexType name="Attachment">
         <xsd:sequence>
-          <xsd:element type="xsd:string" name="FileName" />
-          <xsd:element type="xsd:string" name="FileExtension" />
-          <xsd:element type="xsd:base64Binary" name="FileContents" />
+          <xsd:element type="xsd:string" name="FileName" nillable="true"/>
+          <xsd:element type="xsd:string" name="FileExtension" nillable="true"/>
+          <xsd:element type="xsd:base64Binary" name="FileContents" nillable="true"/>
         </xsd:sequence>
       </xsd:complexType>
       <xsd:element type="tns:Attachment" name="Attachment" nillable="true"/>

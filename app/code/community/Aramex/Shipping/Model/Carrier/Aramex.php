@@ -33,7 +33,7 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
 	
 	function __construct()
 	{
-		$this->_defaultGatewayUrl = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'wsdl/Tracking.wsdl';
+		$this->_defaultGatewayUrl = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_WEB) . 'aramex/Tracking.wsdl';
 	}
 	
 	protected function _doShipmentRequest(Varien_Object $request)

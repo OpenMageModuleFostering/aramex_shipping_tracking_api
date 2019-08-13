@@ -22,7 +22,7 @@
 
                 <model>Aramex_Shipping_Model_Carrier_Aramex</model>
                 <name>aramex</name>
-                <gateway_url>wsdl/Tracking.wsdl</gateway_url>
+                <gateway_url>aramex/Tracking.wsdl</gateway_url>
                 <price>10.00</price>
                 <title>aramex</title>
                 <specificerrmsg>

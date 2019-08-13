@@ -1,0 +1,336 @@
+<?php //barry code;?>
+<?php 
+$_order = Mage::getModel('sales/order')->load($this->getRequest()->getParam('order_id'));
+?>
+<?php $shipping 	= $_order->getShippingAddress(); ?>
+
+<?php
+	//calculating total weight of current order
+	$state = "";
+	if(($shipping->getData('region_id')) && ($shipping->getCountry() == 'US')){
+		$region = Mage::getModel('directory/region')->load($shipping->getData('region_id'));
+		$state = $region->getName();
+	}
+	else{
+		$state = $shipping->getData('region');
+	}
+
+	$billing_state = "";
+	if($shipping->getData('region_id')){
+		$region = Mage::getModel('directory/region')->load($shipping->getData('region_id'));
+		$billing_state = $region->getName();
+	}
+	else{
+		$billing_state = $shipping->getData('region');
+	}
+	$totalWeight 	= 0;
+	$itemscount 	= 0;
+	$itemsv = $_order->getAllVisibleItems();
+	foreach($itemsv as $itemvv){
+		if($itemvv->getQtyOrdered() > $itemvv->getQtyShipped()){
+			$itemscount += $itemvv->getQtyOrdered() - $itemvv->getQtyShipped();
+		}else if($itemvv->getQtyOrdered() == $itemvv->getQtyShipped()){
+			$itemscount += $itemvv->getQtyShipped();
+		}
+		if($itemvv->getWeight() != 0){
+			$weight =  $itemvv->getWeight()*$itemvv->getQtyOrdered();
+		} else {
+			$weight =  0.5*$itemvv->getQtyOrdered();
+		}
+		$totalWeight 	+= $weight;
+	}
+?>
+<div class="schedule-pickup-part">
+	<div class="pickup-form">
+		<form method="post" action="<?php echo Mage::helper("adminhtml")->getUrl('aramexshipment/schedulepickup/post'); ?>" id="pickup-form">
+			<FIELDSET>
+				<legend style="font-weight:bold; padding:0 5px;">Schedule Pickup</legend>
+				<div class="fields mar-5">
+					<h3>Pickup Details</h3>					
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label>Location:</label>
+							<input type="text" readonly="readonly" name="pickup[location]" id="pickup_location" value="Reception" />							
+						</div>
+						<div class="field fl">
+							<label>Vehicle Type:</label>
+							<select name="pickup[vehicle]" id="pickup_vehicle" >
+								<option value="Bike">Small (no specific vehicle required)</option>
+								<option value="Car">Medium (regular car or small van)</option>
+								<option value="Truck">Large (large van or truck required)</option>
+							</select>
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label><span>*</span>Date:</label>
+							<input type="text" readonly="readonly" name="pickup[date]" id="pickup_date" value="" class="width-150 fl" />
+							<input type="button" value=".." id="pickup_date_button" class="required-entry fl mar-lf-10" style="width:30px;" />
+						</div>
+						<div class="field fl">
+							<label><span>*</span>Ready Time:</label>													
+							<select name="pickup[ready_hour]" class="width-60 fl" id="ready_hour">	
+								<?php $time=date("H",Mage::app()->getLocale()->storeTimeStamp());?>
+								<?php for($i=7;$i<20;$i++):?>
+								<?php $val=($i<10)?"0{$i}":$i;?>
+								<option value="<?php echo $val;?>" <?php echo ($time==$i)?'selected="selected"':'';?>><?php echo $val;?></option>
+								<?php endfor;?>
+							</select>
+							<select name="pickup[ready_minute]" class="width-60 fl mar-lf-10" id="ready_minute">	
+								<?php $time=date("i",Mage::app()->getLocale()->storeTimeStamp());?>
+								<?php for($i=0;$i<=55;$i=$i+5):?>
+								<?php $val=($i<10)?"0{$i}":$i;?>
+								<option value="<?php echo $val;?>" <?php echo ($time==$val)?'selected="selected"':'';?>><?php echo $val;?></option>
+								<?php endfor;?>
+							</select>
+							<div class="clearfix"></div>
+						</div>
+						<div class="field fl mar-lf-10">
+							<label><span>*</span>Closing Time:</label>												
+							<select name="pickup[latest_hour]" class="width-60 fl" id="latest_hour">	
+								<?php $time=date("H",Mage::app()->getLocale()->storeTimeStamp());?>
+								<?php $time=$time+1;?>
+								<?php for($i=7;$i<20;$i++):?>
+								<?php $val=($i<10)?"0{$i}":$i;?>
+								<option value="<?php echo $val?>" <?php echo ($time==$val)?'selected="selected"':'';?>><?php echo $val;?></option>
+								<?php endfor;?>
+							</select>
+							<select name="pickup[latest_minute]" class="width-60 fl mar-lf-10" id="latest_minute">	
+								<?php $time=date("i",Mage::app()->getLocale()->storeTimeStamp());?>								
+								<?php for($i=0;$i<=55;$i=$i+5):?>
+								<?php $val=($i<10)?"0{$i}":$i;?>
+								<option value="<?php echo $val;?>" <?php echo ($time==$val)?'selected="selected"':'';?>><?php echo $val;?></option>
+								<?php endfor;?>
+							</select>
+							<div class="clearfix"></div>
+							<script type="text/javascript">// <![CDATA[
+							Calendar.setup({
+								inputField : 'pickup_date',
+								ifFormat : '%m/%e/%Y',
+								button : 'pickup_date_button',
+								align : 'Bl',
+								
+								singleClick : true
+							});
+							// ]]></script>
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label>Reference 1:</label>
+							<input type="text" name="pickup[reference]" id="pickup_reference" value="<?php echo $_order->getIncrementId();?>" />
+						</div>
+						<div class="field fl">
+							<label><span>*</span>Status:</label>
+							<select name="pickup[status]" id="pickup_status" >
+								<option value="Ready">Ready</option>
+								<option value="Pending">Pending</option>								
+							</select>
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label><span>*</span>Product Group:</label>
+							<select name="pickup[product_group]" id="product_group">
+									<option <?php if($shipping) {echo ($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="DOM">Domestic</option>
+						<option <?php if($shipping) {echo ($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="EXP">International Express</option>							
+									</select>
+						</div>
+						<div class="field fl">
+							<label><span>*</span>Product Type:</label>
+							<select name="pickup[product_type]" class="fl" id="product_type">
+								<option <?php if($shipping) {echo ($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="ONP" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Parcel</option>
+							<option value="OND" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Document</option>
+							<option value="CDA" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Cash on Delivery</option>
+							<option <?php if($shipping) {echo ($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="PDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Document Express</option>
+							<option value="PPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Parcel Express</option>
+							<option value="PLX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Letter Express</option>
+							<option value="DDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Deferred Document Express</option>
+							<option value="DPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Deferred Parcel Express</option>
+							<option value="GDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Document Express</option>
+							<option value="GPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Parcel Express</option>							
+							</select>
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label><span>*</span>Payment Type:</label>
+							<select name="pickup[payment_type]">
+									<option value="P">Prepaid</option>
+									<option value="C">Collect</option>
+								</select>
+						</div>	
+						<div class="field fl">
+								<label><span>*</span>Weight</label>
+								<div>
+									<input type="text" name="pickup[text_weight]" class="fl mar-right-10 width-60" value="<?php echo number_format($totalWeight, 2); ?>" />
+									<select name="pickup[weight_unit]" class="fl width-60">
+									<option value="KG">KG</option>
+									<option value="LB">LB</option>								
+									</select>
+								</div>
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label class="width-150"><span>*</span>Number of Pieces:</label>
+							<input type="text" name="pickup[no_pieces]" id="pickup_no_pieces" value="<?php echo $itemscount;?>" />
+						</div>	
+						<div class="field fl">
+							<label class="width-150">Number of Shipments:</label>
+							<input type="text" name="pickup[no_shipments]" id="pickup_no_shipments" value="1" />
+						</div>							
+					</div>
+					
+				</div>
+				<div class="fields mar-10">
+					<h3>Address Information</h3>					
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label><span>*</span>Company:</label>
+							<input type="text" name="pickup[company]" id="pickup_company" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/company'); ?>" />
+						</div>
+						<div class="field fl">
+							<label><span>*</span>Contact:</label>
+							<input type="text" name="pickup[contact]" id="pickup_contact" value="" />
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label><span>*</span>Phone:</label>
+							<input type="text" name="pickup[phone]" id="pickup_phone" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/phone'); ?>" />
+						</div>
+						<div class="field fl">
+							<label>Extension:</label>
+							<input type="text" name="pickup[ext]" id="pickup_ext" value="" />
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field">
+							<label><span>*</span>Mobile:</label>
+							<input type="text" name="pickup[mobile]" id="pickup_mobile" value="" class="width-full required-entry" />
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field">
+							<label><span>*</span>Address:</label>
+							<input type="text" name="pickup[address]" id="pickup_address" value="" class="width-full required-entry" />
+						</div>
+					</div>
+					<?php  $_countries = Mage::getResourceModel('directory/country_collection')->loadByStore()->toOptionArray(); ?>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label><span>*</span>Country:</label>
+							<select name="pickup[country]" id="pickup_country" >
+								<?php if(count($_countries)>0):?>
+									<?php foreach($_countries as $_country): ?>
+										<option value="<?php echo $_country['value'] ?>"  <?php if($shipping){ echo ($shipping->getCountry() == $_country['value']) ? 'selected="selected"' : ''; }?>>
+											<?php echo $_country['label'] ?>
+										</option>
+									<?php endforeach; ?>
+								<?php endif;?>
+							</select>
+						</div>
+						<div class="field fl">
+							<label>State/Prov:</label>
+							<input type="text" name="pickup[state]" id="pickup_state" value="" />
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field fl width-270">
+							<label>City:</label>
+							<input type="text" name="pickup[city]" id="pickup_city" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/city'); ?>" />
+						</div>
+						<div class="field fl">
+							<label>Post Code:</label>
+							<input type="text" name="pickup[zip]" id="pickup_zip" value="<?php echo Mage::getStoreConfig('aramexsettings/shipperdetail/postalcode'); ?>" />
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field">
+							<label><span>*</span>Email:</label>
+							<input type="text" name="pickup[email]" id="pickup_email" value="" class="width-full required-entry" />
+						</div>
+					</div>
+					<div class="clearfix mar-5">
+						<div class="field">
+							<label>Comments:</label>
+							<input type="text" name="pickup[comments]" id="pickup_comments" value="" class="width-full" />
+						</div>
+					</div>
+					<div class="cal-button-part">
+						<button name="aramex_pickup_submit" type="button" id="aramex_pickup_submit" onclick="pickupForm.submit();">Submit</button>
+						<button type="button" onclick="myObj.close()">Close</button>
+						<span class="mar-lf-10 red">* are required fields</span>
+						<input type="hidden" value="<?php echo $this->getRequest()->getParam('order_id');?>" name="pickup[order_id]" />
+					</div>					
+					<div class="pickup-result mar-10">
+						<h3>Result</h3>
+						<div class="pickup-res mar-10"></div>	
+					</div>
+				</div>
+			</FIELDSET>
+		</form>
+		<script type="text/javascript">
+		//<![CDATA[
+			var H='<?php echo date("H",Mage::app()->getLocale()->storeTimeStamp());?>';
+			var M='<?php echo date("i",Mage::app()->getLocale()->storeTimeStamp());?>';
+			var D='<?php echo date("m/d/Y",Mage::app()->getLocale()->storeTimeStamp());?>';
+			var pickupForm = new Validation('pickup-form');  
+			pickupForm.submit=function(){
+				var rH=$('ready_hour').value;
+				var lH=$('latest_hour').value;
+				var rM=$('ready_minute').value;
+				var lM=$('latest_minute').value;				
+				var error=false;
+				var rDate=$('pickup_date').value;	
+				if(rDate=='' || rDate==null){ alert("Pickup Date should not empty"); return; }
+				rDate=rDate.split("/");				
+				cDate=D.split("/");				
+				var isCheckTime=false;
+				
+				if(rDate[2]<cDate[2]){
+					error=true;					
+				}else if(rDate[2]==cDate[2]){
+					if(rDate[0]<cDate[0]){
+						error=true;
+					}else if(rDate[0]==cDate[0]){
+						if(rDate[1]<cDate[1]){
+							error=true;
+						}else if(rDate[1]==cDate[1]){
+							if(rH<H){
+								alert("Ready Time should be greater than Current Time");
+								return;
+							}else if(rH==H && rM<M){
+								alert("Ready Time should be greater than Current Time");
+								return;
+							}
+							isCheckTime=true;
+						}
+					}
+				}
+				if(error){
+					alert("Pickup Date should be greater than Current Date");
+					return;
+				}
+				
+				if(isCheckTime){					
+					if(lH<rH ){					
+						error=true;					
+					}else if(lH<=rH && lM<=rM){
+						error=true;		
+					}					
+					if(error){
+						alert("Closing Time always greater than Ready Time");
+						return;
+					}
+				}
+				if (this.validate()) {
+					myObj.schedulePickup();
+				}
+			}
+		//]]>
+		</script>
+	</div>
+</div>
+<?php //barry code end;?>

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<layout version="0.1.0">	
+	<adminhtml_sales_order_view>
+		<reference name="head">
+			<action method="addItem"><type>skin_js</type><name>aramex/js/jquery.min.js</name></action>					
+			<action method="addItem"><type>skin_js</type><name>aramex/js/common.js</name></action>
+			<action method="addItem"><type>skin_css</type><name>aramex/css/aramex.css</name></action>
+		</reference>
+		<reference name="before_body_end">	
+			<block type="core/template" name="create_shipment" template="aramex/shipment.phtml" />
+			<block type="core/template" name="calculate_rate" template="aramex/calculate_rate.phtml" />
+			<block type="core/template" name="schedule_puckup" template="aramex/schedule_puckup.phtml" />
+		</reference>
+		<reference name="adminhtml_sales_order_view_tab_history">
+			<action method="setTemplate"><template>aramex/sales/order/view/history.phtml</template></action>
+		</reference>
+	</adminhtml_sales_order_view>	
+	<adminhtml_sales_order_shipment_view>
+		<reference name="head">
+			<action method="addItem"><type>skin_js</type><name>aramex/js/jquery.min.js</name></action>					
+			<action method="addItem"><type>skin_js</type><name>aramex/js/common.js</name></action>
+		</reference>
+		<reference name="before_body_end">			
+			<block type="core/template" name="print_label" template="aramex/print_label.phtml" />
+		</reference>
+		<reference name="order_comments">
+			<action method="setTemplate"><template>aramex/sales/order/comments/view.phtml</template></action>
+		</reference>
+	</adminhtml_sales_order_shipment_view>
+	
+</layout>

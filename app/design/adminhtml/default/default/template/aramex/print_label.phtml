@@ -1,0 +1,16 @@
+<?php
+	$order_id=$this->getRequest()->getParam('order_id');
+	if(!$order_id){
+		$shipment = Mage::getModel('sales/order_shipment')->load($this->getRequest()->getParam('shipment_id'));
+		$order_id=$shipment->getOrderId();
+		
+	}
+	$CurrentUrl = Mage::helper('core/url')->getCurrentUrl();
+	Mage::getSingleton('core/session')->setPreviousUrl($CurrentUrl); 
+?>
+<script type="text/javascript">
+	//<![CDATA[			
+	<?php $_url=Mage::helper("adminhtml")->getUrl('aramexshipment/shipment/printLabel/order_id/'.$order_id);?>
+	myObj.printLabelUrl='<?php echo $_url;?>';				
+	  //]]>
+</script>
