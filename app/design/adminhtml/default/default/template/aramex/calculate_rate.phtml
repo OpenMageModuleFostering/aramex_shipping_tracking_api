@@ -132,8 +132,55 @@ $_order = Mage::getModel('sales/order')->load($this->getRequest()->getParam('ord
 						<div class="clearfix mar-10">
 							<div class="field fl width-270">							
 							<label><span>*</span>Service Type</label>							
-								<select name="service_type" class="fl" id="service_type">
-								<option <?php if($shipping) {echo ($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="ONP" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Parcel</option>
+						  <select name="service_type" class="fl" id="service_type">
+						  <?php
+								$allowed_domestic_methods =   explode(',', Mage::getStoreConfig('aramexsettings/config/allowed_domestic_methods'));
+								$allowed_international_methods =  explode(',', Mage::getStoreConfig('aramexsettings/config/allowed_international_methods'));
+								$domestic_methods = Mage::getModel('aramex/carrier_aramex_source_domesticmethods')->toOptionArray();
+								$international_methods = Mage::getModel('aramex/carrier_aramex_source_internationalmethods')->toOptionArray();	
+								
+								
+								$shipperdetail_country = Mage::getStoreConfig('aramexsettings/shipperdetail/country');
+								$shipping_country = is_object($shipping)?$shipping->getCountry():'';
+								
+								
+						  ?>
+						  
+						  <?php if(count($allowed_domestic_methods)>0){ 
+							         $i=1;
+									 foreach($domestic_methods as $key=>$val){
+									   if(in_array($val['value'],$allowed_domestic_methods)){
+									   
+									   /* style="<?php if($shipping_country != $shipperdetail_country) { echo 'display: none'; } ?>"*/
+									   
+									   ?>
+									    <option <?php echo ($i == 1 and $shipping_country == $shipperdetail_country) ? 'selected="selected"' : ''; ?> value="<?php echo $val['value'];?>" id="calc_<?php echo $val['value'];?>" class="local DOM">
+										<?php echo $val['label']; ?></option>									   
+						 <?php  
+								$i++;
+							   }
+						       }
+							   } ?>							   
+							 <?php if(count($allowed_international_methods)>0){ 
+							         $i=1;
+									 foreach($international_methods as $key=>$val){
+									   if(in_array($val['value'],$allowed_international_methods)){
+									   
+									   /*  style="<?php if($shipping_country == $shipperdetail_country) { echo 'display: none'; } ?>" */
+									   
+									   ?>
+									    <option <?php echo ($i == 1 and $shipping_country != $shipperdetail_country) ? 'selected="selected"' : ''; ?> value="<?php echo $val['value'];?>" id="calc_<?php echo $val['value'];?>" class="non-local EXP">
+										<?php echo $val['label']; ?></option>									   
+						 <?php  
+								$i++;
+							   }
+						       }
+							   } ?>   
+							   
+						  
+						   
+						   <?php /*
+						   <option <?php if($shipping) {echo ($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="ONP" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Parcel</option>
 							<option value="OND" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Overnight Document</option>
 							<option value="CDA" class="local" style="<?php if($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>">Cash on Delivery</option>
 							<option <?php if($shipping) {echo ($shipping->getCountry() != Mage::getStoreConfig('aramexsettings/shipperdetail/country')) ? 'selected="selected"' : '';} ?> value="PDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Priority Document Express</option>
@@ -142,7 +189,7 @@ $_order = Mage::getModel('sales/order')->load($this->getRequest()->getParam('ord
 							<option value="DDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Deferred Document Express</option>
 							<option value="DPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Deferred Parcel Express</option>
 							<option value="GDX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Document Express</option>
-							<option value="GPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Parcel Express</option>							
+							<option value="GPX" class="non-local" style="<?php if($shipping->getCountry() == Mage::getStoreConfig('aramexsettings/shipperdetail/country')){ echo 'display: none'; } ?>" >Ground Parcel Express</option>*/?>					
 							</select>
 							</div>
 							<div class="field fl">
@@ -185,16 +232,8 @@ $_order = Mage::getModel('sales/order')->load($this->getRequest()->getParam('ord
 				if (this.validate()) {
 						myObj.calcRate();
 				}
-			} 
-			Event.observe('calc-product-group', 'change', function(){
-				var e=document.getElementById('service_type');
-				if(this.value=='EXP'){ 
-				e.options[3].selected=true;
-				jQuery('.non-local').show();jQuery('.local').hide(); }
-				else{  
-				e.options[0].selected=true;
-				jQuery('.non-local').hide();jQuery('.local').show(); }
-			});
+			}             		
+			jQuery("#service_type").chained("#calc-product-group");
 			<?php $_url=Mage::helper("adminhtml")->getUrl('aramexshipment/shipment/printLabel/order_id/'.$this->getRequest()->getParam('order_id'));?>
 			myObj.printLabelUrl='<?php echo $_url;?>';
 				

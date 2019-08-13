@@ -255,16 +255,22 @@
 				$major_par['Shipments'][] 	= $params;
 				$clientInfo = Mage::helper('aramexshipment')->getClientInfo();	
 				$major_par['ClientInfo'] 	=$clientInfo;
+				
+				$report_id = (int) Mage::getStoreConfig('aramexsettings/config/report_id');
+				if(!$report_id){
+					$report_id =9729;
+				}
 
 				$major_par['LabelInfo'] = array(
-					'ReportID'		=> 9729, //'9201',
+					'ReportID'		=> $report_id, //'9201',
 					'ReportType'		=> 'URL'
 				);
+				
 
 				$formSession=Mage::getSingleton('adminhtml/session');
 				$formSession->setData("form_data",$post);
 				try {
-					//create shipment call
+					//create shipment call				
 					$auth_call = $soapClient->CreateShipments($major_par);					
 					if($auth_call->HasErrors){
 						if(empty($auth_call->Shipments)){
@@ -283,11 +289,11 @@
 								}
 								Mage::throwException($notification_string);
 							} else {
-								Mage::throwException($this->__('Aramex: ' . $auth_call->Shipments->ProcessedShipment->Notifications->Notification->Code .' - '. $auth_call->Shipments->ProcessedShipment->Notifications->Notification->Message));Mage::throwException($this->__('Aramex: ' . $auth_call->Shipments->ProcessedShipment->Notifications->Notification->Code .' - '. $auth_call->Shipments->ProcessedShipment->Notifications->Notification->Message));
+								Mage::throwException($this->__('Aramex: ' . $auth_call->Shipments->ProcessedShipment->Notifications->Notification->Code .' - '. $auth_call->Shipments->ProcessedShipment->Notifications->Notification->Message));								
 							}
 						}
 					} else {
-						if($order->canShip()) {	   
+						if($order->canShip() && $post['aramex_return_shipment_creation_date']=="create") {	   
 							
 							$shipmentid = Mage::getModel('sales/order_shipment_api')->create($order->getIncrementId(), $post['aramex_items'], "AWB No. ".$auth_call->Shipments->ProcessedShipment->ID." - Order No. ".$auth_call->Shipments->ProcessedShipment->Reference1." - <a href='javascript:void(0);' onclick='myObj.printLabel();'>Print Label</a>");
 							
@@ -295,9 +301,9 @@
 
 							$ship 		= Mage::getModel('sales/order_shipment_api')->addTrack($shipmentid, 'aramex', 'Aramex', $auth_call->Shipments->ProcessedShipment->ID);
 							
-							//sending mail
+							/* sending mail */
 							if($ship){
-//								if($post['aramex_email_customer'] == 'yes'){
+							/* if($post['aramex_email_customer'] == 'yes'){ */
                                   
 								  /* send shipment mail */
 								   $storeId = $order->getStore()->getId();
@@ -322,13 +328,13 @@
 
 									
 									if ($copyTo && $copyMethod == 'bcc') {
-									// Add bcc to customer email
+									/* Add bcc to customer email  */
 										foreach ($copyTo as $email) {
 											$emailInfo->addBcc($email);
 										}
 									}
 									$mailer->addEmailInfo($emailInfo);
-									 // Email copies are sent as separated emails if their copy method is 'copy'
+									 /* Email copies are sent as separated emails if their copy method is 'copy' */
 									if ($copyTo && $copyMethod == 'copy') {
 										foreach ($copyTo as $email) {
 											$emailInfo = Mage::getModel('core/email_info');
@@ -341,7 +347,7 @@
 								$senderName=Mage::getStoreConfig(self::XML_PATH_TRANS_IDENTITY_NAME,$storeId);
                                 $senderEmail=Mage::getStoreConfig(self::XML_PATH_TRANS_IDENTITY_EMAIL,$storeId); 
 								 
-								// Set all required params and send emails
+								/* Set all required params and send emails */
 								$mailer->setSender(array('name' => $senderName, 'email' =>$senderEmail));
 								$mailer->setStoreId($storeId);
 								$mailer->setTemplateId($templateId);
@@ -357,11 +363,22 @@
 								    Mage::getSingleton('core/session')
 											->addError('Unable to send email.');
 								}	
-//								}
+								/* } */
 							}							
 
 							Mage::getSingleton('core/session')->addSuccess('Aramex Shipment Number: '.$auth_call->Shipments->ProcessedShipment->ID.' has been created.');
-							//$order->setState('warehouse_pickup_shipped', true);
+							/* $order->setState('warehouse_pickup_shipped', true); */
+						}
+						elseif($post['aramex_return_shipment_creation_date']=="return"){								
+							$message = "Aramex Shipment Return Order AWB No. ".$auth_call->Shipments->ProcessedShipment->ID." - Order No. ".$auth_call->Shipments->ProcessedShipment->Reference1." - <a href='javascript:void(0);' onclick='myObj.printLabel();'>Print Label</a>";
+									
+							Mage::getSingleton('core/session')->addSuccess('Aramex Shipment Return Order Number: '.$auth_call->Shipments->ProcessedShipment->ID.' has been created.');						
+							$order->addStatusToHistory($order->getStatus(), $message, false);
+							$order->save();						
+						}
+						
+						else{
+							Mage::throwException($this->__('Cannot do shipment for the order.'));					
 						}
 					}
 				} catch (Exception $e) {
@@ -397,18 +414,41 @@
 				->addAttributeToSelect('*')	
 				->addFieldToFilter("order_id",$_order->getId())->join("sales/shipment_comment",'main_table.entity_id=parent_id','comment')->addFieldToFilter('comment', array('like'=>"%{$_order->getIncrementId()}%"))->load();
 				
+				
+				$awbno ='';
+				$orderHistory = Mage::getModel('sales/order_status_history')->getCollection()
+                ->addFieldToFilter('parent_id', $_order->getId())->setOrder('created_at','desc');
+				foreach($orderHistory as $history){
+				   $comments = $history->getComment();
+					if($comments && preg_match('/Aramex Shipment Return Order AWB No. ([0-9]+)/',$comments,$cmatches)){
+						$awbno = $cmatches[1];
+						break;
+					}
+				}
+				
+				
 								
 				if($shipments->count()){
-				foreach($shipments as $key=>$comment){
-                    if (version_compare(PHP_VERSION, '5.3.0') <= 0) {
-						$awbno=substr($comment->getComment(),0, strpos($comment->getComment(),"- Order No")); 
+				
+					if($awbno == ''){
+						foreach($shipments as $key=>$comment){
+							if (version_compare(PHP_VERSION, '5.3.0') <= 0) {
+								$awbno=substr($comment->getComment(),0, strpos($comment->getComment(),"- Order No")); 
+							}
+							else{				
+								$awbno=strstr($comment->getComment(),"- Order No",true);
+							}
+							$awbno=trim($awbno,"AWB No.");					
+							break;
+						}
 					}
-					else{				
-						$awbno=strstr($comment->getComment(),"- Order No",true);
-					}
-                    $awbno=trim($awbno,"AWB No.");					
-					break;
+				
+				
+				$report_id = (int) Mage::getStoreConfig('aramexsettings/config/report_id');
+				if(!$report_id){
+					$report_id =9729;
 				}
+				
 				$params = array(		
 			
 				'ClientInfo'  			=> $clientInfo,
@@ -421,13 +461,12 @@
 											'Reference5'			=> '',									
 										),
 				'LabelInfo'				=> array(
-											'ReportID' 				=> 9729,
+											'ReportID' 				=> $report_id,
 											'ReportType'			=> 'URL',
 				),
 				);
 				$params['ShipmentNumber']=$awbno;
-			/*	print_r($params);
-                exit;	*/			
+					
 				try {
 					$auth_call = $soapClient->PrintLabel($params);
 					/* bof  PDF demaged Fixes debug */				
@@ -438,6 +477,7 @@
 								}
 							} else {
 								Mage::throwException($this->__('Aramex: ' . $auth_call->Notifications->Notification->Code . ' - '. $auth_call->Notifications->Notification->Message));
+								
 							}					
                     }
                     /* eof  PDF demaged Fixes */					
@@ -449,6 +489,11 @@
 					exit();					
 				} catch (SoapFault $fault) {					
 					Mage::getSingleton('adminhtml/session')->addError('Error : ' . $fault->faultstring);
+					$this->_redirectUrl($previuosUrl);
+				}
+				catch (Exception $e) {
+					$aramex_errors = true;
+					Mage::getSingleton('adminhtml/session')->addError($e->getMessage());
 					$this->_redirectUrl($previuosUrl);
 				}
 				}else{

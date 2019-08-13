@@ -44,10 +44,17 @@
 	</adminhtml>
 	<default>
 		<aramexsettings>
+				<config>
+					<allowed_domestic_methods>OND,ONP,CDA</allowed_domestic_methods>
+					<allowed_international_methods>IBD,PDX,PLX</allowed_international_methods>
+					<report_id>9729</report_id>
+					<sandbox_flag>0</sandbox_flag>
+				</config>
 				<template>					
 					<shipment_template>aramexsettings_template_shipment_template</shipment_template>	
 					<copy_method>bcc</copy_method>
 				</template>
 		</aramexsettings>
+		
 	</default>
 </config>

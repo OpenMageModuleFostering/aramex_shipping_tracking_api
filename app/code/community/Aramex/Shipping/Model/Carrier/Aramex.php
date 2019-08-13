@@ -32,7 +32,7 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
     protected $_defaultGatewayUrl 	= null;
 	
 	function __construct()
-	{
+	{  
 		$this->_defaultGatewayUrl = Mage::helper('aramexshipment')->getWsdlPath().'Tracking.wsdl';
 	}
 	
@@ -43,23 +43,25 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
 	
     public function collectRates(Mage_Shipping_Model_Rate_Request $request)
     {
+	  
         if (!$this->getConfigFlag($this->_activeFlag)) {
             return false;
         }
+		
 
-        $this->setRequest($request);
-
-        $this->_result = $this->_getQuotes();
-
-        $this->_updateFreeMethodQuote($request);
-
+       $this->setRequest($request);
+        $this->_result = $this->_getQuotes();				
+        $this->_updateFreeMethodQuote($request);		
         return $this->getResult();
     }
+	
+	
 	
     public function setRequest(Mage_Shipping_Model_Rate_Request $request) {
         $this->_request = $request;
 
         $r = new Varien_Object();
+		
 
         if ($request->getLimitMethod()) {
             $r->setService($request->getLimitMethod());
@@ -74,12 +76,12 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
         }
         $r->setUserId($userId);
 
-        if ($request->getAramexContainer()) {
+       /* if ($request->getAramexContainer()) {
             $container = $request->getAramexContainer();
         } else {
             $container = $this->getConfigData('container');
         }
-        $r->setContainer($container);
+        $r->setContainer($container); */
 
         if ($request->getAramexSize()) {
             $size = $request->getAramexSize();
@@ -125,10 +127,13 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
 
         $weight = $this->getTotalNumOfBoxes($request->getPackageWeight());
         $r->setWeightPounds(floor($weight));
+		$r->setPackageQty($request->getPackageQty());
+		
         $r->setWeightOunces(round(($weight - floor($weight)) * 16, 1));
         if ($request->getFreeMethodWeight() != $request->getPackageWeight()) {
             $r->setFreeMethodWeight($request->getFreeMethodWeight());
         }
+		$r->setDestState($request->getDestRegionCode());
 
         $r->setValue($request->getPackageValue());
         $r->setValueWithDiscount($request->getPackageValueWithDiscount());
@@ -143,7 +148,8 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
     }
 	
     protected function _getQuotes() {
-        return false;
+		 return $this->_getAramexQuotes();
+        /*return false; */
     }
 	
     public function getResult() {
@@ -166,11 +172,15 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
      */
     public function getAllowedMethods()
     {
-        $allowed = explode(',', $this->getConfigData('allowed_methods'));
+       /*$allowed = explode(',', $this->getConfigData('allowed_methods'));
         $arr = array();
         foreach ($allowed as $k) {
             $arr[$k] = $this->getCode('method', $k);
         }
+		Mage::log($arr);*/
+		$arr['SFC'] = 'Surface  Cargo (India)';
+		$arr['OND'] = 'Overnight (Document)';
+		$arr['ONP'] = 'Overnight (Parcel)';
         return $arr;
     }
 	
@@ -325,6 +335,108 @@ class Aramex_Shipping_Model_Carrier_Aramex extends Mage_Usa_Model_Shipping_Carri
 
         return $_resultTable;
     }
+	
+	public function _getAramexQuotes(){	
+		$r = $this->_rawRequest;
+		$pkgWeight = $r->getWeightPounds();
+        $pkgQty =  $r->getPackageQty();
+		
+		
+		$product_group = 'EXP';
+		$allowed_methods_key = 'allowed_international_methods';
+		$allowed_methods = Mage::getSingleton('aramex/carrier_aramex_source_internationalmethods')->toKeyArray();	
+		if(Mage::getStoreConfig('aramexsettings/shipperdetail/country') == $r->getDestCountryId()){
+			$product_group = 'DOM';
+			$allowed_methods = Mage::getSingleton('aramex/carrier_aramex_source_domesticmethods')->toKeyArray();
+			$allowed_methods_key = 'allowed_domestic_methods';
+		}
+		
+		$admin_allowed_methods = explode(',',$this->getConfigData($allowed_methods_key));
+		$admin_allowed_methods = array_flip($admin_allowed_methods);		
+		$allowed_methods = array_intersect_key($allowed_methods,$admin_allowed_methods);	
+		
+		$baseUrl = Mage::helper('aramexshipment')->getWsdlPath();
+		$clientInfo = Mage::helper('aramexshipment')->getClientInfo();
+		$OriginAddress = array(
+								'StateOrProvinceCode'	=> Mage::getStoreConfig('aramexsettings/shipperdetail/state'),
+								'City'					=> Mage::getStoreConfig('aramexsettings/shipperdetail/city'),
+								'PostCode'				=> Mage::getStoreConfig('aramexsettings/shipperdetail/postalcode'),
+								'CountryCode'				=> Mage::getStoreConfig('aramexsettings/shipperdetail/country'),
+								);
+		$DestinationAddress = array(
+								'StateOrProvinceCode'	=>$r->getDestState(),
+								'City'					=> '',
+								'PostCode'				=>  Mage_Usa_Model_Shipping_Carrier_Abstract::USA_COUNTRY_ID == $r->getDestCountryId() ? substr($r->getDestPostal(), 0, 5) : $r->getDestPostal(),
+								'CountryCode'			=> $r->getDestCountryId(),
+							);
+	   $ShipmentDetails	= array(
+								'PaymentType'			 => 'P',
+								'ProductGroup'			 => $product_group,
+								'ProductType'			 => '',
+								'ActualWeight' 			 => array('Value' => $pkgWeight, 'Unit' => 'LB'),
+								'ChargeableWeight' 	     => array('Value' => $pkgWeight, 'Unit' => 'LB'),
+								'NumberOfPieces'		 => $pkgQty
+							);
+						
+        $params = array('ClientInfo' => $clientInfo, 'OriginAddress' => $OriginAddress, 'DestinationAddress' => $DestinationAddress, 'ShipmentDetails' => $ShipmentDetails);
+			
+		
+	  //SOAP object		 
+	   $soapClient = new SoapClient($baseUrl . 'aramex-rates-calculator-wsdl.wsdl');
+	   $priceArr  = array();
+	   foreach($allowed_methods as $m_value =>$m_title){	      
+			$params['ShipmentDetails']['ProductType'] = $m_value;
+			
+		try{
+				$results = $soapClient->CalculateRate($params);	
+				
+				if($results->HasErrors){
+					if(count($results->Notifications->Notification) > 1){
+						$error="";
+						foreach($results->Notifications->Notification as $notify_error){
+							$error.=$this->__('Aramex: ' . $notify_error->Code .' - '. $notify_error->Message)."<br>";				
+						}
+						$response['error']=$error;
+					}else{
+						$response['error']=$this->__('Aramex: ' . $results->Notifications->Notification->Code . ' - '. $results->Notifications->Notification->Message);
+					}
+					$response['type']='error';
+				}else{
+					$response['type']='success';					
+					$priceArr[$m_value] = array('label' => $m_title, 'amount'=> $results->TotalAmount->Value);		
+				
+			}
+		} catch (Exception $e) {
+				$response['type']='error';
+				$response['error']=$e->getMessage();			
+		}
+	}	
+	  $result = Mage::getModel('shipping/rate_result');
+        $defaults = $this->getDefaults();
+        if (empty($priceArr)) {
+            $error = Mage::getModel('shipping/rate_result_error');
+            $error->setCarrier($this->_code);
+            $error->setCarrierTitle($this->getConfigData('title'));
+            $error->setErrorMessage($this->getConfigData('specificerrmsg'));
+            $result->append($error);
+        } else {
+            foreach ($priceArr as $method=>$values) {
+                $rate = Mage::getModel('shipping/rate_result_method');
+                $rate->setCarrier($this->_code);
+                $rate->setCarrierTitle($this->getConfigData('title'));
+                $rate->setMethod($method);               
+                $rate->setMethodTitle($values['label']);
+                $rate->setCost($values['amount']);
+                $rate->setPrice($values['amount']);
+                $result->append($rate);
+            }
+        }
+
+        return $result;	
+	}
+	
+	
+	
 }
 
 ?>

@@ -4,6 +4,7 @@
 		<reference name="head">
 			<action method="addItem"><type>skin_js</type><name>aramex/js/jquery.min.js</name></action>					
 			<action method="addItem"><type>skin_js</type><name>aramex/js/common.js</name></action>
+			<action method="addItem"><type>skin_js</type><name>aramex/js/jquery.chained.js</name></action>
 			<action method="addItem"><type>skin_css</type><name>aramex/css/aramex.css</name></action>
 		</reference>
 		<reference name="before_body_end">	

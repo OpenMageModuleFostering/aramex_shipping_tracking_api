@@ -22,6 +22,9 @@ class Aramex_Shipment_Helper_Data extends  Mage_Core_Helper_Abstract
       }
 	  public function getWsdlPath(){
 		$wsdlBasePath = Mage::getModuleDir('etc', 'Aramex_Shipment')  . DS . 'wsdl' . DS . 'Aramex' . DS;
+		if(Mage::getStoreConfig('aramexsettings/config/sandbox_flag')==1){
+			$wsdlBasePath .='TestMode'.DS;
+		}
 		return $wsdlBasePath;
 	  }
 	 

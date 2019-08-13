@@ -12,17 +12,7 @@
 					<sales_order_view>Aramex_Shipment_Block_Sales_Order_View</sales_order_view>
 				</rewrite>
 			</adminhtml>
-		</blocks>
-		<template>
-			<email>
-				<aramex_general_email_template>
-					<label>Aramex New Shipment</label>
-					<file>aramex_shipment_created.html</file>
-					<type>html</type>
-				</aramex_general_email_template>
-			</email>
-		</template>
-		
+		</blocks>	
 	</global>
 	<admin>
         <routers>
@@ -68,7 +58,7 @@
                 <name>aramex</name>
                 <gateway_url>aramex/Tracking.wsdl</gateway_url>
                 <price>10.00</price>
-                <title>aramex</title>
+                <title>Aramex</title>
                 <specificerrmsg>
                     This shipping method is currently unavailable.If you would like to ship using this shipping method, please contact us.
                 </specificerrmsg>
@@ -122,7 +112,6 @@
                 </connection>
             <!-- Use group alias_setup -->
             </aramex_setup>
-        </resources>
-		
+        </resources>		
     </global>
 </config>
