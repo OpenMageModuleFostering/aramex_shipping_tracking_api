@@ -632,7 +632,7 @@
 
 				<div class="text_short">
 					<!--<label>Comment</label><input class="" type="text" id="aramex_shipment_info_comment" name="aramex_shipment_info_comment"  value=""/>-->
-					<label>Comment</label><textarea  class="required" rows="4" cols="<?php if(strpos($_SERVER['HTTP_USER_AGENT'], 'Firefox')){ ?>29 <?php }else{ ?>35<?php } ?>" type="text" id="aramex_shipment_info_comment" name="aramex_shipment_info_comment"><?php echo $_SESSION['form_data']['aramex_shipment_info_comment'] ?></textarea>
+					<label>Comment</label><textarea  class="required" rows="4" cols="<?php if(strpos($_SERVER['HTTP_USER_AGENT'], 'Firefox')){ ?>29 <?php }else{ ?>35<?php } ?>" type="text" id="aramex_shipment_info_comment" name="aramex_shipment_info_comment"><?php if(isset($_SESSION['form_data'])){echo $_SESSION['form_data']['aramex_shipment_info_comment'];} ?></textarea>
 				</div>
 
 				<div class="text_short">
@@ -684,6 +684,7 @@
 				<div class="text_short">
 					<label>Description</label><textarea rows="4" cols="31" type="text" id="aramex_shipment_description" name="aramex_shipment_description" style="display: none;"><?php
 						$itemsnamecounter = 1;
+                        $item_supplier_id='';
 						foreach($_order->getAllVisibleItems() as $itemname){
 							if($itemname->getQtyOrdered() > $itemname->getQtyShipped()){
 								echo  $itemname->getId().' - '. trim($itemname->getName());
@@ -707,8 +708,8 @@
 								}
 							}
 						}
-
-						unset($_SESSION['form_data']);
+                        if(isset($_SESSION['form_data']))
+						    unset($_SESSION['form_data']);
 
 					?>
 					</textarea>
@@ -1222,19 +1223,60 @@
 	});
 
 	jccc(".aramex_all_options").change(function(){
-		if(jccc("select[name=aramex_shipment_shipper_country]").val() != jccc("select[name=aramex_shipment_receiver_country]").val()){
-			jccc("select[name=aramex_shipment_info_product_group]").val('EXP');
-			//jccc("select[name=aramex_shipment_info_service_type]").val('EPX');
+//		if(jccc("select[name=aramex_shipment_shipper_country]").val() != jccc("select[name=aramex_shipment_receiver_country]").val()){
+//			jccc("select[name=aramex_shipment_info_product_group]").val('EXP');
+//			//jccc("select[name=aramex_shipment_info_service_type]").val('EPX');
+//			jccc("select[name=aramex_shipment_info_additional_services] option:selected").removeAttr("selected");
+//			jccc("select[name=aramex_shipment_info_additional_services] .express_service").attr("selected", "selected");
+//		} else {
+//			jccc("select[name=aramex_shipment_info_product_group]").val('DOM');
+//			//jccc("select[name=aramex_shipment_info_service_type]").val('ONP');
+//			jccc("select[name=aramex_shipment_info_additional_services] option:selected").removeAttr("selected");
+//			jccc("select[name=aramex_shipment_info_additional_services] .domestic_service").attr("selected", "selected");
+//		}
+
+	});
+    jccc("#aramex_shipment_info_product_group").change(function(){
+        if(jccc("select[name=aramex_shipment_info_product_group]").val()=='EXP'){
 			jccc("select[name=aramex_shipment_info_additional_services] option:selected").removeAttr("selected");
 			jccc("select[name=aramex_shipment_info_additional_services] .express_service").attr("selected", "selected");
-		} else {
-			jccc("select[name=aramex_shipment_info_product_group]").val('DOM');
-			//jccc("select[name=aramex_shipment_info_service_type]").val('ONP');
+
+			document.getElementById('aramex_shipment_info_product_type').value = 'PDX';
+			document.getElementById('ONP').style.display = 'none';
+			document.getElementById('OND').style.display = 'none';
+			document.getElementById('CDA').style.display = 'none';
+
+			document.getElementById('PDX').style.display = 'block';
+			document.getElementById('PPX').style.display = 'block';
+			document.getElementById('PLX').style.display = 'block';
+			document.getElementById('DDX').style.display = 'block';
+			document.getElementById('DPX').style.display = 'block';
+			document.getElementById('GDX').style.display = 'block';
+			document.getElementById('GPX').style.display = 'block';
+
+        }else if(jccc("select[name=aramex_shipment_info_product_group]").val()=='DOM'){
 			jccc("select[name=aramex_shipment_info_additional_services] option:selected").removeAttr("selected");
 			jccc("select[name=aramex_shipment_info_additional_services] .domestic_service").attr("selected", "selected");
-		}
-	});
 
+			document.getElementById('aramex_shipment_info_product_type').value = 'ONP';
+			document.getElementById('ONP').style.display = 'block';
+			document.getElementById('OND').style.display = 'block';
+			document.getElementById('CDA').style.display = 'block';
+
+			document.getElementById('PDX').style.display = 'none';
+			document.getElementById('PPX').style.display = 'none';
+			document.getElementById('PLX').style.display = 'none';
+			document.getElementById('DDX').style.display = 'none';
+			document.getElementById('DPX').style.display = 'none';
+			document.getElementById('GDX').style.display = 'none';
+			document.getElementById('GPX').style.display = 'none';
+
+        }
+//		jccc("#aramex_shipment_info_product_group_div").html(jccc("select[name=aramex_shipment_info_product_group] option:selected").text());
+		jccc("#aramex_shipment_info_service_type_div").html(jccc("select[name=aramex_shipment_info_service_type] option:selected").text());
+		jccc("#aramex_shipment_info_additional_services_div").html(jccc("select[name=aramex_shipment_info_additional_services] option:selected").text());
+
+     });
 	jccc("#aramex_shipment_info_product_group_div").html(jccc("select[name=aramex_shipment_info_product_group] option:selected").text());
 	jccc("#aramex_shipment_info_service_type_div").html(jccc("select[name=aramex_shipment_info_service_type] option:selected").text());
 	jccc("#aramex_shipment_info_additional_services_div").html(jccc("select[name=aramex_shipment_info_additional_services] option:selected").text());
