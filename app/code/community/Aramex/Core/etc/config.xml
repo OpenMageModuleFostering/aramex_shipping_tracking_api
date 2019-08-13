@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Aramex_Core>
+            <version>0.6.0</version>
+        </Aramex_Core>
+    </modules>
+    <global>
+        <models>
+            <aramex_core>
+                <class>Aramex_Core_Model</class>
+            </aramex_core>
+        </models>
+        <helpers>
+            <aramex_core>
+                <class>Aramex_Core_Helper</class>
+            </aramex_core>
+        </helpers>
+     </global>
+	<adminhtml>
+		<acl>
+			<resources>
+				<admin>
+					<children>
+						<system>
+							<children>
+								<config>
+									<children>
+										<aramexsettings module="aramex_core">
+											<title>aramex</title>
+										</aramexsettings>
+									</children>
+								</config>
+							</children>
+						</system>
+					</children>
+				</admin>
+			</resources>
+		</acl>
+	</adminhtml>
+</config>

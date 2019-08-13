@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<config>
+
+    <sales>
+        <shipping>
+            <carriers>
+                <aramex>
+                    <class>Aramex_Shipping_Model_Carrier_Aramex</class>
+                </aramex>
+            </carriers>
+        </shipping>
+    </sales>
+
+    <default>
+        <carriers>
+            <!-- Use group alias -->
+            <aramex>
+                <active>1</active>
+                <sallowspecific>0</sallowspecific>
+                    <!--model>shipping/carrier_aramex</model-->
+                    <!--model>newmodule/carrier_newmodule</model-->
+
+                <model>Aramex_Shipping_Model_Carrier_Aramex</model>
+                <name>aramex</name>
+                <gateway_url>wsdl/Tracking.wsdl</gateway_url>
+                <price>10.00</price>
+                <title>aramex</title>
+                <specificerrmsg>
+                    This shipping method is currently unavailable.If you would like to ship using this shipping method, please contact us.
+                </specificerrmsg>
+                <handling_type>F</handling_type>
+            </aramex>
+        </carriers>
+    </default>
+
+    <modules>
+        <!-- declare module's version information -->
+        <!-- Use module name_Shipping -->
+        <Aramex_Shipping>
+            <!-- this version number will be used for database upgrades -->
+            <version>0.6.0</version>
+        <!-- Use module name_Shipping -->
+        </Aramex_Shipping>
+    </modules>
+
+    <global>
+        <!-- declare model group for new module -->
+        <models>
+            <!-- model group alias to be used in Mage::getModel() -->
+            <!-- Use group alias -->
+            <aramex>
+                <!-- base class name for the model group -->
+                <!-- Use module name_Shipping_Model -->
+                <class>Aramex_Shipping_Model</class>
+            <!-- Use group alias -->
+            </aramex>
+        </models>
+        <!-- declare resource setup for new module -->
+        <resources>
+            <!-- resource identifier -->
+            <!-- Use group alias_setup -->
+            <aramex_setup>
+                <!-- specify that this resource is a setup resource and used for upgrades -->
+                <setup>
+                    <!-- which module to look for install/upgrade files in -->
+                    <!-- Use module name_Shipping_Model -->
+                    <module>Aramex_Shipping</module>
+                </setup>
+                <!-- specify database connection for this resource -->
+                <connection>
+                    <!-- do not create new connection, use predefined core setup connection -->
+                    <use>core_setup</use>
+                </connection>
+            <!-- Use group alias_setup -->
+            </aramex_setup>
+        </resources>
+    </global>
+</config>

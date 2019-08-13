@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <tabs>
+        <aramex translate="label">
+            <label>ARAMEX</label>
+            <sort_order>1</sort_order>
+        </aramex>
+    </tabs>
+	<sections>
+		<aramexsettings translate="label">
+			<label>ARAMEX Global Settings</label>
+			<tab>aramex</tab>
+			<frontend_type>text</frontend_type>
+			<sort_order>1000</sort_order>
+			<show_in_default>1</show_in_default>
+			<show_in_website>1</show_in_website>
+			<show_in_store>1</show_in_store> 
+			<groups>
+                <settings translate="label">
+                    <label>Client Information</label>
+                    <frontend_type>text</frontend_type>
+                    <sort_order>1</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+					<fields>
+						<account_country_code>
+							<label>Account Country Code</label>
+							<frontend_type>text</frontend_type>
+							<sort_order>1</sort_order>
+							<show_in_default>1</show_in_default>
+							<show_in_website>1</show_in_website>
+							<show_in_store>1</show_in_store>                    
+						</account_country_code>
+						<account_entity>
+							<label>Account Entity</label>
+							<frontend_type>text</frontend_type>
+							<sort_order>1</sort_order>
+							<show_in_default>1</show_in_default>
+							<show_in_website>1</show_in_website>
+							<show_in_store>1</show_in_store>                    
+						</account_entity>
+						<account_number>
+							<label>Account Number</label>
+							<frontend_type>text</frontend_type>
+							<validate>validate-number</validate>
+							<sort_order>1</sort_order>
+							<show_in_default>1</show_in_default>
+							<show_in_website>1</show_in_website>
+							<show_in_store>1</show_in_store>                    
+						</account_number>
+						<account_pin>
+							<label>Account Pin</label>
+							<frontend_type>text</frontend_type>
+							<validate>validate-number</validate>
+							<sort_order>1</sort_order>
+							<show_in_default>1</show_in_default>
+							<show_in_website>1</show_in_website>
+							<show_in_store>1</show_in_store>                    
+						</account_pin>
+						<user_name>
+							<label>Username</label>
+							<frontend_type>text</frontend_type>
+							<sort_order>1</sort_order>
+							<show_in_default>1</show_in_default>
+							<show_in_website>1</show_in_website>
+							<show_in_store>1</show_in_store> 						
+						</user_name>
+						<password>
+							<label>Password</label>
+							<frontend_type>Password</frontend_type>
+							<sort_order>1</sort_order>
+							<show_in_default>1</show_in_default>
+							<show_in_website>1</show_in_website>
+							<show_in_store>1</show_in_store> 							
+						</password>
+					</fields>             					
+                </settings>
+            </groups>			
+		</aramexsettings>
+	</sections>  
+</config>

@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Aramex_Shipping_Tracking_API",
+    "type": "magento-module",
+    "license": "OSL-v3.0",
+    "homepage": "",
+    "description": "Stable",
+    "authors": [
+    {
+        "name": "Aramex",
+        "email": "Amol.Tated@aramex.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}

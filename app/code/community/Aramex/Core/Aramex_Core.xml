@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+ <config>
+     <modules>
+         <Aramex_Core>
+             <active>true</active>
+             <codePool>local</codePool>
+         </Aramex_Core>
+		 <!--
+         <Aramex_Tracking>
+             <active>true</active>
+             <codePool>community</codePool>
+			 <depends>Aramex_Core</depends>
+         </Aramex_Tracking>
+		 
+         <Aramex_Calculator>
+             <active>true</active>
+             <codePool>community</codePool>
+			 <depends>Aramex_Core</depends>
+         </Aramex_Calculator>
+		 
+         <Aramex_Shipping>
+             <active>true</active>
+             <codePool>community</codePool>
+			 <depends>Aramex_Core</depends>
+         </Aramex_Shipping>
+		 -->
+     </modules>
+ </config>
