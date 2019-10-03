@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Aramex_Shipping_Tracking_API",
+    "name": "OpenMageModuleFostering\/Aramex_Shipping_Tracking_API",
     "type": "magento-module",
     "license": "OSL-3.0",
     "homepage": "",
     "description": "Aramex Shipping Extension for magento",
     "authors": [
-    {
-        "name": "Aramex",
-        "email": "portalsthirdparty@aramex.com"
-    }
-],
+        {
+            "name": "Aramex",
+            "email": "portalsthirdparty@aramex.com"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
